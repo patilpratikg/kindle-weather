@@ -1,5 +1,5 @@
-# Edit IMAGE_URL after GitHub Pages is set up.
-IMAGE_URL="https://YOUR-GITHUB-USERNAME.github.io/kindle-weather/dashboard.png"
+# Published every 30 min by the GitHub Actions workflow in this repo.
+IMAGE_URL="https://patilpratikg.github.io/kindle-weather/dashboard.png"
 
 # Seconds between refreshes. Match the GitHub Actions schedule (30 min).
 INTERVAL=1800
