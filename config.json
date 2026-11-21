@@ -1,0 +1,10 @@
+{
+  "city": "Pune",
+  "latitude": 18.5204,
+  "longitude": 73.8567,
+  "timezone": "Asia/Kolkata",
+  "width": 600,
+  "height": 800,
+  "hourlyStep": 3,
+  "hourlySlots": 7
+}
