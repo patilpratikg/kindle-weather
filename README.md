@@ -31,6 +31,11 @@ npm run render
 This writes `out/dashboard.png` (the Kindle image) and `out/preview.html`. Change the layout in
 `src/template.js` and run it again.
 
+The battery badge in the header is drawn by the Kindle itself, from pre-rendered images in
+`kindle/weatherdash/battery/` (one per level, 0–100). The dashboard leaves that corner blank. To
+change the badge's look, edit `tools/battery-icons.mjs`, run `npm run battery-icons`, and copy the
+`battery/` folder to the Kindle again.
+
 ## 2. Publish with GitHub (free)
 
 1. Create a new **public** GitHub repo named `kindle-weather` and push this folder to it.
@@ -70,11 +75,13 @@ dashboard does not start automatically.
 
 ## Tuning on the device
 
-These scripts have not been tested on real hardware yet. Things you may need to adjust in `config.sh`:
+Tested on a Kindle 7th gen (firmware 5.12.2.2): the test mode, image display and battery badge work.
+Every run writes a step-by-step log to `weatherdash/dash.log` on the Kindle drive. Settings in
+`config.sh`:
 
-- **Battery text in the wrong place:** change `BATTERY_COL` / `BATTERY_ROW`.
+- **Battery badge in the wrong place:** change `BATTERY_X` / `BATTERY_Y` (pixels).
 - **Never wakes up / only refreshes while plugged in:** try `RTC_DEV=/dev/rtc0`.
-- **Download fails:** check `weatherdash/dash.log` on the Kindle drive.
+- **Download fails:** check `dash.log`. It records curl's error.
 
 ## Changing city
 
