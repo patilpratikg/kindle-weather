@@ -2,12 +2,12 @@
 
 Turns a jailbroken Kindle into a wall-mounted family display: weather, a sight word of the day
 for an early reader, and a different page for each part of the day. GitHub renders a 600×800 grayscale
-PNG every 15 minutes from 06:07 to 21:52. Every 30 minutes the Kindle wakes up, downloads it over Wi-Fi,
+PNG every 30 minutes from 06:07 to 21:37. Every 30 minutes the Kindle wakes up, downloads it over Wi-Fi,
 shows it, and deep-sleeps; from 22:00 it sleeps straight through to 06:15.
 Nothing at home has to stay on.
 
 ```
-Open-Meteo API ──► GitHub Actions (every 15 min) ──► GitHub Pages: dashboard.png ──► Kindle (Wi-Fi, curl + eips)
+Open-Meteo API ──► GitHub Actions (every 30 min) ──► GitHub Pages: dashboard.png ──► Kindle (Wi-Fi, curl + eips)
 ```
 
 ## Project layout
@@ -26,7 +26,7 @@ Open-Meteo API ──► GitHub Actions (every 15 min) ──► GitHub Pages: d
 | `data/festivals.json` | **You edit this:** festival dates that get a themed page |
 | `src/sightwords.js` | Sight word of the day: 92 Dolch pre-primer and primer words, each with a short sentence |
 | `src/render.js` | Renders HTML → screenshot → 8-bit grayscale PNG in `out/` |
-| `.github/workflows/render.yml` | Runs the render every 15 min and publishes `out/` to GitHub Pages |
+| `.github/workflows/render.yml` | Runs the render every 30 min (06:07-21:37) and publishes `out/` to GitHub Pages |
 | `kindle/weatherdash/` | Dashboard scripts for the Kindle (`/mnt/us/weatherdash`) |
 | `kindle/documents/` | Scriptlets that start the dashboard from the Kindle library |
 

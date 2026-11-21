@@ -2,12 +2,12 @@ name: Render dashboard
 
 on:
   schedule:
-    # Every 15 min at off-peak minutes, 06:07-21:52 Pune time only (nothing changes overnight).
+    # Every 30 min at :07 and :37, 06:07-21:37 Pune time only (nothing changes overnight).
     # GitHub cron is in UTC; Pune is UTC+5:30. Off-peak minutes avoid :00/:30, when GitHub
     # often delays or drops scheduled runs.
-    - cron: '37,52 0 * * *'          # 06:07, 06:22 IST
-    - cron: '7,22,37,52 1-15 * * *'  # 06:37 - 21:22 IST
-    - cron: '7,22 16 * * *'          # 21:37, 21:52 IST
+    - cron: '37 0 * * *'         # 06:07 IST
+    - cron: '7,37 1-15 * * *'    # 06:37 - 21:07 IST
+    - cron: '7 16 * * *'         # 21:37 IST
   workflow_dispatch:
   push:
     branches: [main]

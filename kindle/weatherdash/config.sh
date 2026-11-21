@@ -1,4 +1,4 @@
-# Published every 15 min (06:07-21:52) by the GitHub Actions workflow in this repo.
+# Published every 30 min (06:07-21:37) by the GitHub Actions workflow in this repo.
 IMAGE_URL="https://patilpratikg.github.io/kindle-weather/dashboard.png"
 
 # Seconds between refreshes during the day.
