@@ -118,6 +118,24 @@ refresh() {
   show
 }
 
+# Minutes since midnight for "HH:MM" (strips leading zeros so "08" isn't read as octal).
+hm_to_min() { h="${1%%:*}"; m="${1##*:}"; echo $(( ${h#0} * 60 + ${m#0} )); }
+
+# Seconds to sleep before the next refresh: the normal interval by day, or straight through
+# to WAKE_AT if the night pause has started (or the next wake would land inside it).
+next_sleep() {
+  now=$(( $(date +%H | sed 's/^0//') * 60 + $(date +%M | sed 's/^0//') ))
+  night=$(hm_to_min "${NIGHT_START:-22:00}")
+  wake=$(hm_to_min "${WAKE_AT:-06:15}")
+  next=$(( now + INTERVAL / 60 ))
+  in_night() { t=$(( $1 % 1440 )); [ "$t" -ge "$night" ] || [ "$t" -lt "$wake" ]; }
+  if in_night "$now" || in_night "$next"; then
+    echo $(( ((wake - now + 1440) % 1440) * 60 ))
+  else
+    echo "$INTERVAL"
+  fi
+}
+
 deep_sleep() {
   secs="$1"
   start="$(date +%s)"
@@ -148,7 +166,9 @@ case "$1" in
     while true; do
       refresh
       wifi_down
-      deep_sleep "$INTERVAL"
+      secs="$(next_sleep)"
+      [ "$secs" -gt "$INTERVAL" ] && log "night pause: sleeping $((secs / 60)) min until ${WAKE_AT:-06:15}"
+      deep_sleep "$secs"
     done
     ;;
   *)

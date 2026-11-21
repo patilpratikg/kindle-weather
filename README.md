@@ -2,7 +2,8 @@
 
 Turns a jailbroken Kindle into a wall-mounted family display: weather, a sight word of the day
 for an early reader, and a different page for each part of the day. GitHub renders a 600×800 grayscale
-PNG every 15 minutes. Every 30 minutes the Kindle wakes up, downloads it over Wi-Fi, shows it, and deep-sleeps.
+PNG every 15 minutes from 06:07 to 21:52. Every 30 minutes the Kindle wakes up, downloads it over Wi-Fi,
+shows it, and deep-sleeps; from 22:00 it sleeps straight through to 06:15.
 Nothing at home has to stay on.
 
 ```
