@@ -1,4 +1,4 @@
-# Kindle weather dashboard (Pune)
+# Kindle weather dashboard (Baner, Pune)
 
 Turns a jailbroken Kindle into a wall-mounted family display: weather, a sight word of the day
 for an early reader, and a different page for each part of the day. GitHub renders a 600×800 grayscale
