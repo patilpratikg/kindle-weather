@@ -5,13 +5,16 @@ import puppeteer from 'puppeteer';
 import sharp from 'sharp';
 import { fetchWeather } from './weather.js';
 import { renderHtml } from './template.js';
+import { wordOfTheDay } from './sightwords.js';
 
 const cfg = JSON.parse(readFileSync(new URL('../config.json', import.meta.url)));
 const outDir = new URL('../out/', import.meta.url);
 mkdirSync(outDir, { recursive: true });
 
 const weather = await fetchWeather(cfg);
-const html = renderHtml(weather, cfg);
+// SW_DATE=YYYY-MM-DD previews the sight word for another day.
+const sw = wordOfTheDay(process.env.SW_DATE || weather.date.iso, cfg.sightWords.startDate, cfg.sightWords.reviewCount);
+const html = renderHtml(weather, cfg, sw);
 writeFileSync(new URL('preview.html', outDir), html);
 writeFileSync(new URL('weather.json', outDir), JSON.stringify(weather, null, 2));
 

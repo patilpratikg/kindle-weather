@@ -16,6 +16,7 @@ Open-Meteo API ──► GitHub Actions (every 30 min) ──► GitHub Pages: d
 | `src/weather.js` | Fetches the Open-Meteo forecast (no API key) and maps weather codes to labels/icons |
 | `src/icons.js` | Line-art weather icons drawn for e-ink |
 | `src/template.js` | The dashboard layout (HTML/CSS) |
+| `src/sightwords.js` | Sight word of the day: 92 Dolch pre-primer and primer words, each with a short sentence |
 | `src/render.js` | Renders HTML → screenshot → 8-bit grayscale PNG in `out/` |
 | `.github/workflows/render.yml` | Runs the render every 30 min and publishes `out/` to GitHub Pages |
 | `kindle/weatherdash/` | Dashboard scripts for the Kindle (`/mnt/us/weatherdash`) |
@@ -82,6 +83,13 @@ Every run writes a step-by-step log to `weatherdash/dash.log` on the Kindle driv
 - **Battery badge in the wrong place:** change `BATTERY_X` / `BATTERY_Y` (pixels).
 - **Never wakes up / only refreshes while plugged in:** try `RTC_DEV=/dev/rtc0`.
 - **Download fails:** check `dash.log`. It records curl's error.
+
+## Sight word of the day
+
+The middle of the dashboard shows one new sight word a day, in the Andika font (made for early
+readers), with a short sentence using it and the previous three words to practise. Words run in
+order from `sightWords.startDate` in `config.json` and loop after 92 days. To start over, set
+`startDate` to today. To preview another day: `$env:SW_DATE="2026-12-24"; npm run render`.
 
 ## Changing city
 

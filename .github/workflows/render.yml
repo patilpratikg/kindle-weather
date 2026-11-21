@@ -2,7 +2,9 @@ name: Render dashboard
 
 on:
   schedule:
-    - cron: '*/30 * * * *'   # every 30 min (GitHub may delay scheduled runs by a few minutes)
+    # Every 15 min at off-peak minutes. GitHub delays or drops scheduled runs at busy times
+    # like :00 and :30, so this avoids them and runs often enough to survive a skipped run.
+    - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
   push:
     branches: [main]

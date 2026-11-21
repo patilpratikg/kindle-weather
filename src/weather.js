@@ -105,6 +105,7 @@ function shape(raw, cfg) {
     tomorrow: day(1),
     hours,
     date: {
+      iso: d.time[0],
       day: dd,
       weekday: date.toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'UTC' }),
       month: date.toLocaleDateString('en-GB', { month: 'long', timeZone: 'UTC' }),

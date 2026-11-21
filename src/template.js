@@ -4,31 +4,49 @@ import { dirname, join } from 'node:path';
 import { icon } from './icons.js';
 
 const require = createRequire(import.meta.url);
-const fontDir = join(dirname(require.resolve('@fontsource/noto-sans/package.json')), 'files');
+const fontsDir = (pkg) => join(dirname(require.resolve(`@fontsource/${pkg}/package.json`)), 'files');
 
 // Fonts are embedded so the render never depends on the network or the OS font set.
-const fontFace = (weight) => {
-  const b64 = readFileSync(join(fontDir, `noto-sans-latin-${weight}-normal.woff2`)).toString('base64');
-  return `@font-face{font-family:'Noto Sans';font-weight:${weight};src:url(data:font/woff2;base64,${b64}) format('woff2');}`;
+// Andika is designed for early readers (single-storey "a" and "g", clear letter shapes).
+const fontFace = (pkg, family, weight) => {
+  const b64 = readFileSync(join(fontsDir(pkg), `${pkg}-latin-${weight}-normal.woff2`)).toString('base64');
+  return `@font-face{font-family:'${family}';font-weight:${weight};src:url(data:font/woff2;base64,${b64}) format('woff2');}`;
 };
+const FONTS = [
+  ...[400, 600, 700].map((wt) => fontFace('noto-sans', 'Noto Sans', wt)),
+  ...[400, 700].map((wt) => fontFace('andika', 'Andika', wt)),
+].join('\n');
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-export function renderHtml(w, cfg) {
-  const { current: c, today: t, tomorrow: tm, hours, date: d } = w;
+// Shrink long words so they always fit the card.
+const wordSize = (word) => ({ 1: 112, 2: 108, 3: 100, 4: 86, 5: 72, 6: 60 }[word.length] ?? 54);
 
-  const hourCells = hours.map((h) => `
-      <div class="hour">
-        <div class="h-time">${h.time}</div>
-        ${icon(h.icon, 40, 1.4)}
-        <div class="h-temp">${h.temp}°</div>
-        <div class="h-rain">${h.rain}%</div>
-      </div>`).join('');
+function sightWordSection(sw) {
+  const sentence = esc(sw.sentence).replace(/\{(.+?)\}/, '<b>$1</b>');
+  const review = sw.review.length
+    ? `<div class="w-k">Practice</div><div class="w-chips">${sw.review.map((r) => `<span class="chip">${esc(r)}</span>`).join('')}</div>`
+    : `<div class="w-k">Your first word!</div>`;
+  return `
+  <section class="words">
+    <div class="w-card">
+      <div class="w-label">Word of the day</div>
+      <div class="w-word" style="font-size:${wordSize(sw.word)}px">${esc(sw.word)}</div>
+    </div>
+    <div class="w-right">
+      <div class="w-sentence">${sentence}</div>
+      <div class="w-review">${review}</div>
+    </div>
+  </section>`;
+}
+
+export function renderHtml(w, cfg, sw) {
+  const { current: c, today: t, tomorrow: tm, date: d } = w;
 
   return `<!doctype html>
 <html><head><meta charset="utf-8">
 <style>
-${[400, 600, 700].map(fontFace).join('\n')}
+${FONTS}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:${cfg.width}px;height:${cfg.height}px;background:#fff;color:#000;overflow:hidden}
 body{font-family:'Noto Sans',sans-serif;padding:14px 22px 18px;display:flex;flex-direction:column}
@@ -55,14 +73,21 @@ header .battery{justify-self:end;width:104px} /* left blank: the Kindle draws it
 .tomorrow{display:flex;align-items:center;gap:10px;padding-top:10px}
 .tomorrow .hilo{font-size:21px}
 
-.hours{display:grid;grid-template-columns:repeat(${hours.length},1fr);padding:24px 0 26px;text-align:center}
-.hour{display:flex;flex-direction:column;align-items:center;gap:8px}
-.h-time{font-size:14px}
-.h-temp{font-size:19px;font-weight:600}
-.h-rain{font-size:13px}
+.words{display:flex;align-items:center;gap:22px;padding:24px 0 26px}
+.w-card{width:244px;height:172px;flex:none;border:2.5px solid #000;border-radius:16px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center}
+.w-label{font-size:12px;color:#444;letter-spacing:.5px;text-transform:uppercase;margin-top:-4px}
+.w-word{font-family:'Andika',sans-serif;font-weight:700;line-height:1.05}
+.w-right{flex:1;display:flex;flex-direction:column;gap:16px}
+.w-sentence{font-family:'Andika',sans-serif;font-size:30px;line-height:1.25;text-wrap:balance}
+.w-sentence b{font-weight:700;text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:5px}
+.w-review{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.w-k{font-size:12px;color:#444;text-transform:uppercase;letter-spacing:.5px}
+.w-chips{display:flex;gap:8px}
+.chip{font-family:'Andika',sans-serif;font-size:23px;padding:1px 12px 3px;border:1.5px solid #444;border-radius:10px}
 
 .date{flex:1;display:flex;align-items:center;gap:28px;padding:10px 6px 0}
-.d-num{font-size:170px;font-weight:700;line-height:.9;letter-spacing:-6px}
+.d-num{font-size:150px;font-weight:700;line-height:.9;letter-spacing:-6px}
 .d-week{font-size:22px}
 .d-month{font-size:36px;font-weight:700;line-height:1.2}
 .d-year{font-size:19px;margin-top:4px}
@@ -102,8 +127,7 @@ header .battery{justify-self:end;width:104px} /* left blank: the Kindle draws it
   </section>
   <div class="thin"></div>
 
-  <section class="hours">${hourCells}
-  </section>
+  ${sightWordSection(sw)}
   <div class="thin"></div>
 
   <section class="date">
