@@ -36,8 +36,10 @@ html,body{margin:0;width:${W}px;height:${H}px;background:#fff;overflow:hidden}
 </svg></body></html>`;
 }
 
-export async function renderBadges(outDir) {
+// Writes light badges to outDir and inverted (white-on-black) ones to darkDir for the bedtime page.
+export async function renderBadges(outDir, darkDir) {
   mkdirSync(outDir, { recursive: true });
+  mkdirSync(darkDir, { recursive: true });
   const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
   try {
     const page = await browser.newPage();
@@ -48,6 +50,8 @@ export async function renderBadges(outDir) {
       const shot = await page.screenshot({ type: 'png' });
       await sharp(shot).grayscale().toColourspace('b-w').png({ compressionLevel: 9 })
         .toFile(join(outDir, `${level}.png`));
+      await sharp(shot).grayscale().negate({ alpha: false }).toColourspace('b-w').png({ compressionLevel: 9 })
+        .toFile(join(darkDir, `${level}.png`));
     }
   } finally {
     await browser.close();
@@ -56,6 +60,7 @@ export async function renderBadges(outDir) {
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const out = fileURLToPath(new URL('../kindle/weatherdash/battery/', import.meta.url));
-  await renderBadges(out);
-  console.log(`Rendered 101 battery badges to ${out}`);
+  const dark = fileURLToPath(new URL('../kindle/weatherdash/battery-dark/', import.meta.url));
+  await renderBadges(out, dark);
+  console.log(`Rendered 101 light and 101 dark battery badges`);
 }

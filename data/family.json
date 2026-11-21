@@ -1,0 +1,44 @@
+{
+  "_help": "Edit this file on github.com (pencil icon) to change what the Kindle shows. Dates are YYYY-MM-DD. Icons: tooth, shirt, bowl, shoe, cup, bag, comb, book, gift, cake, star, house, tree, mountain.",
+
+  "childName": "",
+  "wakeTime": "07:00",
+
+  "morningJobs": [
+    { "icon": "tooth", "label": "Brush teeth" },
+    { "icon": "shirt", "label": "Get dressed" },
+    { "icon": "bowl", "label": "Eat breakfast" },
+    { "icon": "shoe", "label": "Shoes on" },
+    { "icon": "cup", "label": "Water bottle" },
+    { "icon": "bag", "label": "School bag" }
+  ],
+
+  "countdowns": [
+    { "date": "2026-11-26", "label": "until Grandma comes!", "icon": "gift" },
+    { "date": "2026-12-03", "label": "until your birthday!", "icon": "cake" },
+    { "date": "2026-12-25", "label": "until Christmas!", "icon": "star" }
+  ],
+
+  "weekendPlans": [
+    { "when": "Sat 10:00", "what": "Swimming class" },
+    { "when": "Sat 17:00", "what": "Park with cousins" },
+    { "when": "Sun 11:00", "what": "Library visit" },
+    { "when": "Sun 18:00", "what": "Video call with Grandma" }
+  ],
+
+  "outings": {
+    "outdoor": [
+      { "name": "Sinhagad Fort", "tip": "Leave early for the cool morning air" },
+      { "name": "Pashan Lake", "tip": "Watch the birds by the water" },
+      { "name": "Empress Garden", "tip": "Big old trees and lots of shade" },
+      { "name": "Pu La Deshpande Garden", "tip": "Japanese-style garden with a little stream" },
+      { "name": "Katraj Zoo", "tip": "Go in the morning when the animals are awake" }
+    ],
+    "indoor": [
+      { "name": "Joshi's Museum of Miniature Railway", "tip": "Tiny trains running through a tiny city" },
+      { "name": "Library visit", "tip": "Pick three new picture books" },
+      { "name": "Fort building at home", "tip": "Blankets, pillows and a torch" },
+      { "name": "Baking day", "tip": "Cookies to share" }
+    ]
+  }
+}

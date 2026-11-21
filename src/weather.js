@@ -103,6 +103,11 @@ function shape(raw, cfg) {
     },
     today: day(0),
     tomorrow: day(1),
+    days: d.time.slice(0, 3).map((iso, i) => ({
+      iso,
+      name: new Date(iso + 'T00:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }),
+      ...day(i),
+    })),
     hours,
     date: {
       iso: d.time[0],

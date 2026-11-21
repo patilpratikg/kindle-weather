@@ -11,6 +11,7 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 LOG="$DIR/dash.log"
 IMG=/tmp/weatherdash.png
 SAMPLE="$DIR/sample.png"
+THEME_FILE=/tmp/weatherdash.theme
 TEST_SECONDS="${TEST_SECONDS:-45}"
 
 log() { echo "$(date '+%Y-%m-%d %H:%M:%S') $*" >> "$LOG"; }
@@ -62,6 +63,9 @@ download() {
     || curl -fsSk -m 40 -o "$IMG.new" "$IMAGE_URL" 2>>"$LOG" \
     || { log "download failed"; return 1; }
   mv "$IMG.new" "$IMG"
+  # theme.txt sits next to the image: "dark" on the black bedtime page, otherwise "light".
+  t="$(curl -fsS -m 15 "${IMAGE_URL%/*}/theme.txt" 2>/dev/null || curl -fsSk -m 15 "${IMAGE_URL%/*}/theme.txt" 2>/dev/null)"
+  case "$t" in dark*) echo dark > "$THEME_FILE" ;; *) echo light > "$THEME_FILE" ;; esac
 }
 
 battery() {
@@ -81,7 +85,9 @@ draw_battery() {
   sleep 1 # let the full-screen image refresh finish first
   # Pre-rendered badge ("87%" + bar) from battery/<level>.png; plain text if that fails.
   # (eips' built-in font has no "%" character.)
-  badge="$DIR/battery/$level.png"
+  badges="$DIR/battery"
+  [ "$(cat "$THEME_FILE" 2>/dev/null)" = dark ] && [ -d "$DIR/battery-dark" ] && badges="$DIR/battery-dark"
+  badge="$badges/$level.png"
   if [ -f "$badge" ] && run eips -g "$badge" -x "$BATTERY_X" -y "$BATTERY_Y"; then
     return 0
   fi

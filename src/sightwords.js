@@ -99,6 +99,37 @@ export const WORDS = [
   ['but', 'I am small {but} strong.'],
 ];
 
+// Simple deterministic shuffle so a given day always gets the same puzzle.
+function seeded(seed) {
+  let s = seed >>> 0 || 1;
+  return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32);
+}
+
+// "Find the word" puzzle: the target appears `hits` times among other words.
+export function findGrid(sw, size = 12, hits = 3) {
+  const rand = seeded(sw.number * 7919);
+  // Other words are all different, so only the target repeats. Prefer words already learned.
+  const pool = WORDS.slice(0, Math.max(sw.number, size + 2)).map(([w]) => w).filter((w) => w !== sw.word);
+  const others = [];
+  while (others.length < size - hits && pool.length) others.push(pool.splice(Math.floor(rand() * pool.length), 1)[0]);
+  const grid = [...others, ...Array(hits).fill(sw.word)];
+  for (let i = grid.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [grid[i], grid[j]] = [grid[j], grid[i]];
+  }
+  return { grid, hits };
+}
+
+// Sentences of today's word and the last few, as a tiny read-alone story.
+export const storyLines = (sw, count = 3) => {
+  const lines = [sw.sentence];
+  for (const w of sw.review.slice(0, count - 1)) {
+    const entry = WORDS.find(([x]) => x === w);
+    if (entry) lines.push(entry[1].replace(/[{}]/g, ''));
+  }
+  return lines;
+};
+
 // One new word per day, counted from `startDate` (YYYY-MM-DD) in the dashboard's timezone.
 export function wordOfTheDay(todayIso, startDate, reviewCount = 3) {
   const day = (iso) => Date.UTC(...iso.split('-').map((n, i) => (i === 1 ? n - 1 : +n)));

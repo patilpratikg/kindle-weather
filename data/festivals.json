@@ -1,0 +1,16 @@
+{
+  "_help": "The Kindle shows a festival theme all day on these dates. Fixed-date holidays are certain. Dates marked \"check\": true follow the Hindu calendar and were not confirmed - check them against a panchang and correct them here. Icons: diya, kite, flag, splash, star, sparkle, gift.",
+
+  "festivals": [
+    { "date": "2026-12-25", "name": "Merry Christmas!", "line": "A day for stars, cake and presents", "icon": "star" },
+    { "date": "2027-01-01", "name": "Happy New Year!", "line": "Welcome, 2027", "icon": "sparkle" },
+    { "date": "2027-01-15", "name": "Makar Sankranti", "line": "Til-gul ghya, god god bola!", "icon": "kite", "check": true },
+    { "date": "2027-01-26", "name": "Republic Day", "line": "Happy Republic Day, India!", "icon": "flag" },
+    { "date": "2027-03-22", "name": "Happy Holi!", "line": "The festival of colours", "icon": "splash", "check": true },
+    { "date": "2027-04-07", "name": "Gudi Padwa", "line": "Happy Marathi New Year!", "icon": "flag", "check": true },
+    { "date": "2027-08-15", "name": "Independence Day", "line": "Happy Independence Day, India!", "icon": "flag" },
+    { "date": "2027-09-04", "name": "Ganesh Chaturthi", "line": "Ganpati Bappa Morya!", "icon": "sparkle", "check": true },
+    { "date": "2027-10-29", "name": "Happy Diwali!", "line": "The festival of lights", "icon": "diya", "check": true },
+    { "date": "2027-12-25", "name": "Merry Christmas!", "line": "A day for stars, cake and presents", "icon": "star" }
+  ]
+}
