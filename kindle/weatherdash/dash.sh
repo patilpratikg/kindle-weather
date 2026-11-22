@@ -132,19 +132,20 @@ refresh() {
 # Minutes since midnight for "HH:MM" (strips leading zeros so "08" isn't read as octal).
 hm_to_min() { h="${1%%:*}"; m="${1##*:}"; echo $(( ${h#0} * 60 + ${m#0} )); }
 
-# Seconds to sleep before the next refresh: the normal interval by day, or straight through
-# to WAKE_AT if the night pause has started (or the next wake would land inside it).
+# Seconds to sleep so the Kindle wakes exactly on the next clock boundary (:00 or :30 with
+# INTERVAL=1800). If that boundary falls in the night pause, sleep straight through to WAKE_AT.
 next_sleep() {
-  now=$(( $(date +%H | sed 's/^0//') * 60 + $(date +%M | sed 's/^0//') ))
-  night=$(hm_to_min "${NIGHT_START:-22:00}")
-  wake=$(hm_to_min "${WAKE_AT:-06:15}")
-  next=$(( now + INTERVAL / 60 ))
-  in_night() { t=$(( $1 % 1440 )); [ "$t" -ge "$night" ] || [ "$t" -lt "$wake" ]; }
-  if in_night "$now" || in_night "$next"; then
-    echo $(( ((wake - now + 1440) % 1440) * 60 ))
-  else
-    echo "$INTERVAL"
+  set -- $(date '+%H %M %S')
+  now_s=$(( ${1#0} * 3600 + ${2#0} * 60 + ${3#0} ))
+  night=$(( $(hm_to_min "${NIGHT_START:-22:00}") * 60 ))
+  wake=$(( $(hm_to_min "${WAKE_AT:-06:00}") * 60 ))
+  next=$(( (now_s / INTERVAL + 1) * INTERVAL ))
+  t=$(( next % 86400 ))
+  if [ "$t" -ge "$night" ] || [ "$t" -lt "$wake" ]; then
+    next=$wake
+    [ "$next" -le "$now_s" ] && next=$(( next + 86400 ))
   fi
+  echo $(( next - now_s ))
 }
 
 deep_sleep() {

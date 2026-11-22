@@ -2,12 +2,10 @@ name: Render dashboard
 
 on:
   schedule:
-    # Every 30 min at :07 and :37, 06:07-21:37 Pune time only (nothing changes overnight).
-    # GitHub cron is in UTC; Pune is UTC+5:30. Off-peak minutes avoid :00/:30, when GitHub
-    # often delays or drops scheduled runs.
-    - cron: '37 0 * * *'         # 06:07 IST
-    - cron: '7,37 1-15 * * *'    # 06:37 - 21:07 IST
-    - cron: '7 16 * * *'         # 21:37 IST
+    # At :25 and :55 Pune time, 05:55-21:25: five minutes before each Kindle refresh at :00/:30,
+    # each run draws the picture for that next slot. GitHub cron is in UTC (Pune = UTC+5:30),
+    # so UTC :25 is Pune :55 and UTC :55 is Pune :25 of the next hour.
+    - cron: '25,55 0-15 * * *'   # 05:55, 06:25, ... 21:25 IST
   workflow_dispatch:
   push:
     branches: [main]

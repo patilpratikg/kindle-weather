@@ -44,9 +44,9 @@ export async function fetchWeather(cfg) {
     latitude: cfg.latitude,
     longitude: cfg.longitude,
     timezone: cfg.timezone,
-    forecast_days: '3',
+    forecast_days: '5',
     current: 'temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,is_day,wind_speed_10m',
-    hourly: 'temperature_2m,precipitation_probability,weather_code,is_day',
+    hourly: 'temperature_2m,apparent_temperature,relative_humidity_2m,precipitation_probability,weather_code,is_day,wind_speed_10m',
     daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max,sunrise,sunset',
   });
   const res = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`);
@@ -56,67 +56,78 @@ export async function fetchWeather(cfg) {
 
 const round = (n) => Math.round(n);
 const hhmm = (iso) => iso.slice(11, 16);
+const longDate = (iso, opt) => new Date(iso + 'T00:00:00Z').toLocaleDateString('en-GB', { ...opt, timeZone: 'UTC' });
 
+// Everything fetched, kept as plain arrays so a view can be built for any time (see weatherAt).
 function shape(raw, cfg) {
   const { current: c, hourly: h, daily: d } = raw;
-
-  // Open-Meteo returns local times without an offset, e.g. "2026-11-21T14:15".
-  const nowHour = c.time.slice(0, 13) + ':00';
-  let start = h.time.indexOf(nowHour);
-  if (start < 0) start = 0;
-  start += 1; // begin with the next full hour
-
-  const hours = [];
-  for (let i = 0; i < cfg.hourlySlots; i++) {
-    const k = start + i * cfg.hourlyStep;
-    if (k >= h.time.length) break;
-    hours.push({
-      time: hhmm(h.time[k]),
-      temp: round(h.temperature_2m[k]),
-      rain: h.precipitation_probability[k] ?? 0,
-      ...describe(h.weather_code[k], h.is_day[k]),
-    });
-  }
-
-  const day = (i) => ({
-    max: round(d.temperature_2m_max[i]),
-    min: round(d.temperature_2m_min[i]),
-    rain: d.precipitation_probability_max[i] ?? 0,
-    wind: round(d.wind_speed_10m_max[i]),
-    ...describe(d.weather_code[i], 1),
-  });
-
-  const [y, m, dd] = d.time[0].split('-').map(Number);
-  const date = new Date(Date.UTC(y, m - 1, dd));
-
   return {
     city: cfg.city,
+    fetchedAt: c.time, // local time, e.g. "2026-11-22T13:15"
     updated: new Intl.DateTimeFormat('en-GB', {
       timeZone: cfg.timezone, hour: '2-digit', minute: '2-digit', hour12: false,
     }).format(new Date()),
-    current: {
+    now: {
       temp: round(c.temperature_2m),
       feels: round(c.apparent_temperature),
       humidity: c.relative_humidity_2m,
       wind: round(c.wind_speed_10m),
       ...describe(c.weather_code, c.is_day),
     },
-    today: day(0),
-    tomorrow: day(1),
-    days: d.time.slice(0, 3).map((iso, i) => ({
-      iso,
-      name: new Date(iso + 'T00:00:00Z').toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }),
-      ...day(i),
+    hourly: h.time.map((time, k) => ({
+      time,
+      temp: round(h.temperature_2m[k]),
+      feels: round(h.apparent_temperature[k]),
+      humidity: h.relative_humidity_2m[k],
+      wind: round(h.wind_speed_10m[k]),
+      rain: h.precipitation_probability[k] ?? 0,
+      ...describe(h.weather_code[k], h.is_day[k]),
     })),
-    hours,
+    daily: d.time.map((iso, i) => ({
+      iso,
+      name: longDate(iso, { weekday: 'short' }),
+      max: round(d.temperature_2m_max[i]),
+      min: round(d.temperature_2m_min[i]),
+      rain: d.precipitation_probability_max[i] ?? 0,
+      wind: round(d.wind_speed_10m_max[i]),
+      sunrise: hhmm(d.sunrise[i]),
+      sunset: hhmm(d.sunset[i]),
+      ...describe(d.weather_code[i], 1),
+    })),
+  };
+}
+
+// The weather as the pages should see it at a given local date and time.
+// Close to the fetch time it uses the measured current conditions; for a later time
+// (a pre-drawn slot) it uses that hour's forecast, and "today" becomes that day.
+export function weatherAt(f, iso, minutes) {
+  let off = f.daily.findIndex((x) => x.iso === iso);
+  if (off < 0) off = 0;
+  const target = `${iso}T${String(Math.floor(minutes / 60)).padStart(2, '0')}:00`;
+  const fetchedMin = Date.parse(f.fetchedAt + 'Z') / 60000;
+  const targetMin = Date.parse(`${iso}T00:00Z`) / 60000 + minutes;
+  let current = f.now;
+  if (Math.abs(targetMin - fetchedMin) > 45) {
+    const hr = f.hourly.find((x) => x.time === target);
+    if (hr) current = { temp: hr.temp, feels: hr.feels, humidity: hr.humidity, wind: hr.wind, icon: hr.icon, label: hr.label };
+  }
+  const day = f.daily[off];
+  const [y, , dd] = iso.split('-').map(Number);
+  return {
+    city: f.city,
+    updated: f.updated,
+    current,
+    today: day,
+    tomorrow: f.daily[off + 1] ?? day,
+    days: f.daily.slice(off, off + 3),
     date: {
-      iso: d.time[0],
+      iso,
       day: dd,
-      weekday: date.toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'UTC' }),
-      month: date.toLocaleDateString('en-GB', { month: 'long', timeZone: 'UTC' }),
+      weekday: longDate(iso, { weekday: 'long' }),
+      month: longDate(iso, { month: 'long' }),
       year: y,
-      sunrise: hhmm(d.sunrise[0]),
-      sunset: hhmm(d.sunset[0]),
+      sunrise: day.sunrise,
+      sunset: day.sunset,
     },
   };
 }

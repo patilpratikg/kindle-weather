@@ -1,50 +1,52 @@
-// Fetch data -> pick the page for the current Pune time -> render -> 8-bit grayscale PNG for the Kindle.
-//   npm run render              the page for right now (what GitHub publishes)
-//   PAGE=bedtime npm run render  force one page
-//   PAGE=all npm run render      every page into out/pages/ for previewing
-//   SW_DATE=2026-12-24           preview the sight word for another day
+// Fetch data, then draw the Kindle picture as an 8-bit grayscale PNG.
+//
+//   npm run render                What GitHub publishes: the picture for the NEXT refresh slot
+//                                 (:00 or :30). GitHub runs at :25 and :55, so it's ready when the
+//                                 Kindle wakes.
+//   PAGE=bedtime npm run render   Force one page (for previewing), drawn for right now.
+//   PAGE=all npm run render       Every page into out/pages/.
+//   SW_DATE=YYYY-MM-DD SW_TIME=HH:MM   Preview a different moment (with PAGE=...).
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer';
 import sharp from 'sharp';
-import { fetchWeather } from './weather.js';
+import { fetchWeather, weatherAt } from './weather.js';
 import { fetchAirQuality } from './airquality.js';
 import { moonPhase } from './moon.js';
 import { wordAt, wordIndex, firstWordIndex } from './sightwords.js';
 import { festivalOn, nextFestival, addDays } from './family.js';
-import { localNow, choosePage } from './schedule.js';
+import { localNow, choosePage, nextSlot, slotOf } from './schedule.js';
 import { PAGES } from './pages.js';
 
 const cfg = JSON.parse(readFileSync(new URL('../config.json', import.meta.url)));
 const outDir = new URL('../out/', import.meta.url);
 mkdirSync(outDir, { recursive: true });
+const out = (p) => fileURLToPath(new URL(p, outDir));
 
-const [w, aq] = await Promise.all([fetchWeather(cfg), fetchAirQuality(cfg)]);
+const [forecast, aq] = await Promise.all([fetchWeather(cfg), fetchAirQuality(cfg)]);
+writeFileSync(out('weather.json'), JSON.stringify({ ...forecast, airQuality: aq }, null, 2));
 const now = localNow(cfg.timezone);
-// Between midnight and 6 am it's still "last night": keep showing last night's word.
-// (GitHub sometimes runs a scheduled job hours late.)
-//   SW_DATE=YYYY-MM-DD and SW_TIME=HH:MM preview the word for another moment.
-const swCfg = cfg.sightWords;
-const lateNight = now.hour < 6;
-const wordDate = process.env.SW_DATE || (lateNight ? addDays(now.iso, -1) : now.iso);
-const wordMin = process.env.SW_TIME
-  ? process.env.SW_TIME.split(':').reduce((h, m) => h * 60 + +m)
-  : lateNight ? 24 * 60 - 1 : now.minutes;
-const refresh = swCfg.mode === 'refresh';
-const ctx = {
-  cfg, w, aq, now,
-  sw: wordAt(wordIndex(wordDate, wordMin, swCfg), swCfg.reviewCount),
-  // The next word the child will see: tomorrow's first word.
-  swTomorrow: wordAt(firstWordIndex(addDays(wordDate, 1), swCfg), swCfg.reviewCount),
-  labels: refresh
-    ? { word: 'Read this word', short: 'Read this word', learned: 'Last word today', next: 'First word tomorrow', progress: 'Word' }
-    : { word: 'Word of the day', short: "Today's word", learned: 'Today you learned', next: "Tomorrow's word", progress: 'Words I can read' },
-  moon: moonPhase(),
-  fest: festivalOn(now.iso) ?? nextFestival(now.iso), // the next one is only used when previewing
-};
-ctx.sw.label = ctx.labels.word;
-ctx.swTomorrow.label = ctx.labels.word;
-writeFileSync(new URL('weather.json', outDir), JSON.stringify({ ...w, airQuality: aq }, null, 2));
+
+const sw = cfg.sightWords;
+const labels = sw.mode === 'refresh'
+  ? { word: 'Read this word', short: 'Read this word', learned: 'Last word today', next: 'First word tomorrow', progress: 'Word' }
+  : { word: 'Word of the day', short: "Today's word", learned: 'Today you learned', next: "Tomorrow's word", progress: 'Words I can read' };
+
+// Everything a page needs to draw itself as of `slot` (a date and time).
+function contextFor(slot) {
+  const word = wordAt(wordIndex(slot.iso, slot.minutes, sw, cfg.refresh), sw.reviewCount);
+  const next = wordAt(firstWordIndex(addDays(slot.iso, 1), sw, cfg.refresh), sw.reviewCount);
+  word.label = next.label = labels.word;
+  return {
+    cfg, aq, labels,
+    now: slot,
+    w: weatherAt(forecast, slot.iso, slot.minutes),
+    sw: word,
+    swTomorrow: next,
+    moon: moonPhase(),
+    fest: festivalOn(slot.iso) ?? nextFestival(slot.iso), // the next one is only used when previewing
+  };
+}
 
 async function renderTo(tab, html, file) {
   await tab.setContent(html, { waitUntil: 'load' });
@@ -60,27 +62,35 @@ try {
   const tab = await browser.newPage();
   await tab.setViewport({ width: cfg.width, height: cfg.height, deviceScaleFactor: 1 });
 
-  if (process.env.PAGE === 'all') {
-    const dir = new URL('pages/', outDir);
-    mkdirSync(dir, { recursive: true });
-    for (const [name, build] of Object.entries(PAGES)) {
-      await renderTo(tab, build(ctx), fileURLToPath(new URL(`${name}.png`, dir)));
-      console.log(`  ${name}`);
+  if (process.env.PAGE) {
+    // Preview: draw for right now, or for SW_DATE / SW_TIME.
+    const t = process.env.SW_TIME ? process.env.SW_TIME.split(':').reduce((h, m) => h * 60 + +m) : now.minutes;
+    const ctx = contextFor(slotOf(process.env.SW_DATE || now.iso, t));
+    const all = process.env.PAGE === 'all';
+    if (all) mkdirSync(out('pages/'), { recursive: true });
+    for (const name of all ? Object.keys(PAGES) : [process.env.PAGE]) {
+      const html = PAGES[name](ctx);
+      if (!all) writeFileSync(out('preview.html'), html);
+      await renderTo(tab, html, all ? out(`pages/${name}.png`) : out('dashboard.png'));
+      console.log(`  ${name}: word "${ctx.sw.word}"`);
     }
-    console.log(`Rendered ${Object.keys(PAGES).length} pages to out/pages/`);
   } else {
-    const name = process.env.PAGE || choosePage(now, cfg.schedule);
-    const html = PAGES[name](ctx);
-    writeFileSync(new URL('preview.html', outDir), html);
-    await renderTo(tab, html, fileURLToPath(new URL('dashboard.png', outDir)));
+    // Publish: the picture for the next :00 / :30 slot.
+    const slot = nextSlot(now, cfg.refresh);
+    const ctx = contextFor(slot);
+    const page = choosePage(slot, cfg.schedule);
+    const html = PAGES[page](ctx);
+    writeFileSync(out('preview.html'), html);
+    await renderTo(tab, html, out('dashboard.png'));
     // Tells the Kindle which battery badge to use (white or black background).
-    writeFileSync(new URL('theme.txt', outDir), name === 'bedtime' ? 'dark\n' : 'light\n');
-    writeFileSync(new URL('page.txt', outDir), `${name}\n`);
-    writeFileSync(new URL('index.html', outDir),
+    writeFileSync(out('theme.txt'), page === 'bedtime' ? 'dark\n' : 'light\n');
+    const at = `${slot.iso} ${String(slot.hour).padStart(2, '0')}:${String(slot.minutes % 60).padStart(2, '0')}`;
+    writeFileSync(out('page.txt'), `${page} for ${at}\n`);
+    writeFileSync(out('index.html'),
       `<!doctype html><meta charset="utf-8"><title>${cfg.city} dashboard</title>` +
       `<body style="margin:0;background:#ddd;display:grid;place-items:center;min-height:100vh">` +
       `<img src="dashboard.png" width="${cfg.width}" height="${cfg.height}" style="box-shadow:0 2px 12px #0003">`);
-    console.log(`Rendered "${name}" page: ${w.current.temp}° ${w.current.label}, word "${ctx.sw.word}", updated ${w.updated}`);
+    console.log(`Drew "${page}" for ${at} (word "${ctx.sw.word}"), at ${forecast.updated}`);
   }
 } finally {
   await browser.close();

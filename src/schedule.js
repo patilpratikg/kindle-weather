@@ -30,3 +30,26 @@ export function choosePage(now, s) {
   if (within(now.minutes, s.reading.from, s.reading.to)) return 'reading';
   return 'main';
 }
+
+// ---------------------------------------------------------------- refresh slots
+// The Kindle refreshes at :00 and :30 (config.refresh: every 30 min, 06:00-21:30).
+// GitHub runs a few minutes before each one and draws the picture for that next slot.
+
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const shiftDay = (iso, n) => new Date(Date.parse(iso + 'T00:00:00Z') + n * 86400000).toISOString().slice(0, 10);
+
+export const slotOf = (iso, minutes) => ({
+  iso,
+  minutes,
+  hour: Math.floor(minutes / 60),
+  weekday: WEEKDAYS[new Date(iso + 'T00:00:00Z').getUTCDay()],
+});
+
+// The next refresh slot after `now`; after the last slot of the day, the first one tomorrow.
+export function nextSlot(now, refresh) {
+  const from = mins(refresh.from), to = mins(refresh.to), every = refresh.every;
+  const m = (Math.floor(now.minutes / every) + 1) * every;
+  if (m < from) return slotOf(now.iso, from);
+  if (m > to) return slotOf(shiftDay(now.iso, 1), from);
+  return slotOf(now.iso, m);
+}

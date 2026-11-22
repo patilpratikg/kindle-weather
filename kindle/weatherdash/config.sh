@@ -1,14 +1,13 @@
-# Published every 30 min (06:07-21:37) by the GitHub Actions workflow in this repo.
+# GitHub draws this at :25 and :55 (05:55-21:25), for the Kindle's next refresh.
 IMAGE_URL="https://patilpratikg.github.io/kindle-weather/dashboard.png"
 
-# Seconds between refreshes during the day.
+# Refresh every 30 minutes, lined up with the clock: the Kindle wakes exactly at :00 and :30.
 INTERVAL=1800
 
-# Night pause (Kindle's local time, HH:MM). After NIGHT_START the Kindle sleeps straight through
-# to WAKE_AT instead of waking every 30 minutes. GitHub stops drawing at night too; its first
-# morning image is ready at about 06:07, so WAKE_AT is a little after that.
+# Night pause (Kindle's local time, HH:MM). Wake-ups from NIGHT_START until WAKE_AT are skipped:
+# after the 21:30 refresh the Kindle sleeps straight through to 06:00.
 NIGHT_START=22:00
-WAKE_AT=06:15
+WAKE_AT=06:00
 
 # Real-time clock used to wake from deep sleep. Try /dev/rtc0 if rtc1 does not wake the device.
 RTC_DEV=/dev/rtc1

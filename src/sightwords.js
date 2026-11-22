@@ -146,21 +146,21 @@ const dayIndex = (iso, startDate) => {
 const toMin = (hhmm) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; };
 
 // Which word to show at a given date and time.
-//   mode "refresh": a new word for every refresh slot of the day (e.g. every 30 min, 06:07-21:37)
+//   mode "refresh": a new word for every refresh slot of the day (config.refresh: every 30 min, 06:00-21:30)
 //   mode "daily":   one word for the whole day
 // Uses the clock rather than counting runs, so a late or skipped GitHub run doesn't shift words.
-export function wordIndex(iso, minutes, sw) {
+export function wordIndex(iso, minutes, sw, refresh) {
   const day = dayIndex(iso, sw.startDate);
   if (sw.mode !== 'refresh') return day;
-  const start = toMin(sw.dayStart), end = toMin(sw.dayEnd);
-  const perDay = Math.floor((end - start) / sw.slotMinutes) + 1;
-  const slot = Math.min(perDay - 1, Math.max(0, Math.floor((minutes - start) / sw.slotMinutes)));
+  const start = toMin(refresh.from), end = toMin(refresh.to);
+  const perDay = Math.floor((end - start) / refresh.every) + 1;
+  const slot = Math.min(perDay - 1, Math.max(0, Math.floor((minutes - start) / refresh.every)));
   return day * perDay + slot;
 }
 
-// Index of the first word of the next day.
-export function firstWordIndex(iso, sw) {
-  return wordIndex(iso, toMin(sw.dayStart), sw);
+// Index of the first word of a day.
+export function firstWordIndex(iso, sw, refresh) {
+  return wordIndex(iso, toMin(refresh.from), sw, refresh);
 }
 
 // Kept for the daily mode and older callers.

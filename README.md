@@ -1,13 +1,15 @@
 # Kindle weather dashboard (Baner, Pune)
 
 Turns a jailbroken Kindle into a wall-mounted family display: weather, a sight word of the day
-for an early reader, and a different page for each part of the day. GitHub renders a 600×800 grayscale
-PNG every 30 minutes from 06:07 to 21:37. Every 30 minutes the Kindle wakes up, downloads it over Wi-Fi,
-shows it, and deep-sleeps; from 22:00 it sleeps straight through to 06:15.
+for an early reader, and a different page for each part of the day.
+
+The Kindle refreshes **exactly at :00 and :30**, from 06:00 to 21:30. Five minutes before each
+refresh (at :25 and :55) GitHub draws the 600×800 grayscale picture for that slot. The Kindle wakes,
+downloads it over Wi-Fi, shows it and deep-sleeps; after 21:30 it sleeps straight through to 06:00.
 Nothing at home has to stay on.
 
 ```
-Open-Meteo API ──► GitHub Actions (every 30 min) ──► GitHub Pages: dashboard.png ──► Kindle (Wi-Fi, curl + eips)
+Open-Meteo API ──► GitHub Actions (:25 and :55) ──► GitHub Pages: dashboard.png ──► Kindle (Wi-Fi, curl + eips)
 ```
 
 ## Project layout
@@ -26,7 +28,7 @@ Open-Meteo API ──► GitHub Actions (every 30 min) ──► GitHub Pages: d
 | `data/festivals.json` | **You edit this:** festival dates that get a themed page |
 | `src/sightwords.js` | Sight word of the day: 92 Dolch pre-primer and primer words, each with a short sentence |
 | `src/render.js` | Renders HTML → screenshot → 8-bit grayscale PNG in `out/` |
-| `.github/workflows/render.yml` | Runs the render every 30 min (06:07-21:37) and publishes `out/` to GitHub Pages |
+| `.github/workflows/render.yml` | Runs at :25/:55 (05:55-21:25), draws the next :00/:30 picture and publishes `out/` to GitHub Pages |
 | `kindle/weatherdash/` | Dashboard scripts for the Kindle (`/mnt/us/weatherdash`) |
 | `kindle/documents/` | Scriptlets that start the dashboard from the Kindle library |
 
@@ -116,13 +118,13 @@ Festival dates marked `"check": true` follow the Hindu calendar and need confirm
 Every page shows a sight word in the Andika font (made for early readers), with a short sentence
 using it and the previous three words to practise. Settings are in `config.json` → `sightWords`:
 
-- `"mode": "refresh"` (current): a **new word and sentence at every refresh**, every 30 minutes
-  from `dayStart` to `dayEnd`. That is 32 words a day, so the 92-word list cycles about every 3 days.
+- `"mode": "refresh"` (current): a **new word and sentence at every refresh** (:00 and :30,
+  06:00-21:30, set in `config.json` → `refresh`). That is 32 words a day, so the 92-word list cycles about every 3 days.
 - `"mode": "daily"`: one word for the whole day, cycling every 92 days.
 
 Words follow the clock, not the number of runs, so a late or skipped GitHub run doesn't throw the
 order off. To start the list over from "a", set `startDate` to today. To preview a moment:
-`$env:SW_DATE="2026-11-23"; $env:SW_TIME="07:07"; npm run render`.
+`$env:SW_DATE="2026-11-23"; $env:SW_TIME="07:00"; $env:PAGE="morning"; npm run render`.
 
 ## Changing city
 

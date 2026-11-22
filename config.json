@@ -5,18 +5,27 @@
   "timezone": "Asia/Kolkata",
   "width": 600,
   "height": 800,
-  "hourlyStep": 3,
-  "hourlySlots": 7,
+  "refresh": {
+    "every": 30,
+    "from": "06:00",
+    "to": "21:30"
+  },
   "schedule": {
-    "bedtime": { "from": "20:00", "to": "06:00" },
-    "morning": { "from": "06:00", "to": "09:00" },
-    "reading": { "from": "15:00", "to": "20:00" }
+    "bedtime": {
+      "from": "20:00",
+      "to": "06:00"
+    },
+    "morning": {
+      "from": "06:00",
+      "to": "09:00"
+    },
+    "reading": {
+      "from": "15:00",
+      "to": "20:00"
+    }
   },
   "sightWords": {
     "mode": "refresh",
-    "slotMinutes": 30,
-    "dayStart": "06:07",
-    "dayEnd": "21:37",
     "startDate": "2026-11-22",
     "reviewCount": 3
   }
