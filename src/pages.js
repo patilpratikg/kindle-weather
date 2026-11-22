@@ -74,7 +74,7 @@ export function morning(ctx) {
     <div class="thin"></div>
     <section class="foot row">
       ${cd ? `<div class="count box row">${pic(cd.icon || 'gift', 42, 1.5)}<div><div class="kid n">${cd.big}</div><div class="sm muted">${esc(cd.label)}</div></div></div>` : ''}
-      <div class="wbox soft ${cd ? '' : 'full'}"><div class="cap">Today's word</div><div class="kid w">${esc(sw.word)}</div><div class="kid s">${sentenceHtml(sw)}</div></div>
+      <div class="wbox soft ${cd ? '' : 'full'}"><div class="cap">${ctx.labels.short}</div><div class="kid w">${esc(sw.word)}</div><div class="kid s">${sentenceHtml(sw)}</div></div>
     </section>`,
     css: `
     .wx{gap:18px;padding:20px 0 18px}.t{font-size:62px;font-weight:600;letter-spacing:-1px}
@@ -119,7 +119,7 @@ export function reading(ctx) {
       <div class="fgrid">${grid.map((g) => `<span class="kid fw">${esc(g)}</span>`).join('')}</div>
     </section>
     <section class="prog">
-      <div class="row between"><div class="cap">Words I can read</div><div class="kid pn"><b>${sw.number}</b> of ${sw.total}</div></div>
+      <div class="row between"><div class="cap">${ctx.labels.progress}</div><div class="kid pn"><b>${sw.number}</b> of ${sw.total}</div></div>
       <div class="bar"><i style="width:${Math.max(pct, 2)}%"></i></div>
     </section>`,
     css: `
@@ -155,8 +155,8 @@ export function bedtime(ctx) {
     <div class="kid gn">Good night${family.childName ? `, ${esc(family.childName)}` : ''}</div>
     <div class="sub">${moon.name} · ${moon.note}</div>
     <div class="cards">
-      <div class="card"><div class="cap">Today you learned</div><div class="kid w">${esc(sw.word)}</div></div>
-      <div class="card"><div class="cap">Tomorrow's word</div><div class="kid w">${esc(swTomorrow.word)}</div></div>
+      <div class="card"><div class="cap">${ctx.labels.learned}</div><div class="kid w">${esc(sw.word)}</div></div>
+      <div class="card"><div class="cap">${ctx.labels.next}</div><div class="kid w">${esc(swTomorrow.word)}</div></div>
     </div>
     <div class="tm row">${icon(nextDay.icon, 46, 1.4)}<div><div class="cap">${late ? 'Today' : 'Tomorrow'}</div><div class="hl">${nextDay.max}° / ${nextDay.min}° · ${esc(nextDay.label)}</div></div></div>
     <div class="wake row">${pic('clock', 28, 1.6)}<span>${wake}</span></div>`,

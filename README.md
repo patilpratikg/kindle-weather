@@ -113,10 +113,16 @@ Festival dates marked `"check": true` follow the Hindu calendar and need confirm
 
 ## Sight word of the day
 
-Every page shows one new sight word a day, in the Andika font (made for early
-readers), with a short sentence using it and the previous three words to practise. Words run in
-order from `sightWords.startDate` in `config.json` and loop after 92 days. To start over, set
-`startDate` to today. To preview another day: `$env:SW_DATE="2026-12-24"; npm run render`.
+Every page shows a sight word in the Andika font (made for early readers), with a short sentence
+using it and the previous three words to practise. Settings are in `config.json` → `sightWords`:
+
+- `"mode": "refresh"` (current): a **new word and sentence at every refresh**, every 30 minutes
+  from `dayStart` to `dayEnd`. That is 32 words a day, so the 92-word list cycles about every 3 days.
+- `"mode": "daily"`: one word for the whole day, cycling every 92 days.
+
+Words follow the clock, not the number of runs, so a late or skipped GitHub run doesn't throw the
+order off. To start the list over from "a", set `startDate` to today. To preview a moment:
+`$env:SW_DATE="2026-11-23"; $env:SW_TIME="07:07"; npm run render`.
 
 ## Changing city
 

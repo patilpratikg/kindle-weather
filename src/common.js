@@ -59,7 +59,7 @@ export const wordSize = (word, scale = 1) =>
 
 export const sentenceHtml = (sw) => esc(sw.sentence).replace(/\{(.+?)\}/, '<b>$1</b>');
 
-export function wordCard(sw, { width = 244, height = 172, label = 'Word of the day', scale = 1 } = {}) {
+export function wordCard(sw, { width = 244, height = 172, label = sw.label ?? 'Word of the day', scale = 1 } = {}) {
   return `<div class="wcard" style="width:${width}px;height:${height}px">
     <div class="cap">${label}</div>
     <div class="w" style="font-size:${wordSize(sw.word, scale)}px">${esc(sw.word)}</div>

@@ -130,13 +130,38 @@ export const storyLines = (sw, count = 3) => {
   return lines;
 };
 
-// One new word per day, counted from `startDate` (YYYY-MM-DD) in the dashboard's timezone.
-export function wordOfTheDay(todayIso, startDate, reviewCount = 3) {
-  const day = (iso) => Date.UTC(...iso.split('-').map((n, i) => (i === 1 ? n - 1 : +n)));
-  const n = Math.max(0, Math.round((day(todayIso) - day(startDate)) / 86400000));
+// The n-th word in the sequence (looping through the list), with the words just before it to review.
+export function wordAt(n, reviewCount = 3) {
   const at = (k) => WORDS[((k % WORDS.length) + WORDS.length) % WORDS.length];
   const [word, sentence] = at(n);
   const review = [];
   for (let k = 1; k <= reviewCount && n - k >= 0; k++) review.push(at(n - k)[0]);
   return { word, sentence, review, number: (n % WORDS.length) + 1, total: WORDS.length };
 }
+
+const dayIndex = (iso, startDate) => {
+  const day = (d) => Date.UTC(...d.split('-').map((n, i) => (i === 1 ? n - 1 : +n)));
+  return Math.max(0, Math.round((day(iso) - day(startDate)) / 86400000));
+};
+const toMin = (hhmm) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; };
+
+// Which word to show at a given date and time.
+//   mode "refresh": a new word for every refresh slot of the day (e.g. every 30 min, 06:07-21:37)
+//   mode "daily":   one word for the whole day
+// Uses the clock rather than counting runs, so a late or skipped GitHub run doesn't shift words.
+export function wordIndex(iso, minutes, sw) {
+  const day = dayIndex(iso, sw.startDate);
+  if (sw.mode !== 'refresh') return day;
+  const start = toMin(sw.dayStart), end = toMin(sw.dayEnd);
+  const perDay = Math.floor((end - start) / sw.slotMinutes) + 1;
+  const slot = Math.min(perDay - 1, Math.max(0, Math.floor((minutes - start) / sw.slotMinutes)));
+  return day * perDay + slot;
+}
+
+// Index of the first word of the next day.
+export function firstWordIndex(iso, sw) {
+  return wordIndex(iso, toMin(sw.dayStart), sw);
+}
+
+// Kept for the daily mode and older callers.
+export const wordOfTheDay = (iso, startDate, reviewCount = 3) => wordAt(dayIndex(iso, startDate), reviewCount);

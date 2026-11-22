@@ -10,7 +10,7 @@ import sharp from 'sharp';
 import { fetchWeather } from './weather.js';
 import { fetchAirQuality } from './airquality.js';
 import { moonPhase } from './moon.js';
-import { wordOfTheDay } from './sightwords.js';
+import { wordAt, wordIndex, firstWordIndex } from './sightwords.js';
 import { festivalOn, nextFestival, addDays } from './family.js';
 import { localNow, choosePage } from './schedule.js';
 import { PAGES } from './pages.js';
@@ -21,17 +21,29 @@ mkdirSync(outDir, { recursive: true });
 
 const [w, aq] = await Promise.all([fetchWeather(cfg), fetchAirQuality(cfg)]);
 const now = localNow(cfg.timezone);
-// Between midnight and 6 am it's still "last night": keep yesterday's word as the one learned,
-// and show today's as the next word. (GitHub sometimes runs a scheduled job hours late.)
-const wordDate = process.env.SW_DATE || (now.hour < 6 ? addDays(now.iso, -1) : now.iso);
-const word = (iso) => wordOfTheDay(iso, cfg.sightWords.startDate, cfg.sightWords.reviewCount);
+// Between midnight and 6 am it's still "last night": keep showing last night's word.
+// (GitHub sometimes runs a scheduled job hours late.)
+//   SW_DATE=YYYY-MM-DD and SW_TIME=HH:MM preview the word for another moment.
+const swCfg = cfg.sightWords;
+const lateNight = now.hour < 6;
+const wordDate = process.env.SW_DATE || (lateNight ? addDays(now.iso, -1) : now.iso);
+const wordMin = process.env.SW_TIME
+  ? process.env.SW_TIME.split(':').reduce((h, m) => h * 60 + +m)
+  : lateNight ? 24 * 60 - 1 : now.minutes;
+const refresh = swCfg.mode === 'refresh';
 const ctx = {
   cfg, w, aq, now,
-  sw: word(wordDate),
-  swTomorrow: word(addDays(wordDate, 1)),
+  sw: wordAt(wordIndex(wordDate, wordMin, swCfg), swCfg.reviewCount),
+  // The next word the child will see: tomorrow's first word.
+  swTomorrow: wordAt(firstWordIndex(addDays(wordDate, 1), swCfg), swCfg.reviewCount),
+  labels: refresh
+    ? { word: 'Read this word', short: 'Read this word', learned: 'Last word today', next: 'First word tomorrow', progress: 'Word' }
+    : { word: 'Word of the day', short: "Today's word", learned: 'Today you learned', next: "Tomorrow's word", progress: 'Words I can read' },
   moon: moonPhase(),
   fest: festivalOn(now.iso) ?? nextFestival(now.iso), // the next one is only used when previewing
 };
+ctx.sw.label = ctx.labels.word;
+ctx.swTomorrow.label = ctx.labels.word;
 writeFileSync(new URL('weather.json', outDir), JSON.stringify({ ...w, airQuality: aq }, null, 2));
 
 async function renderTo(tab, html, file) {

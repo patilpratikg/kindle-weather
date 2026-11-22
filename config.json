@@ -13,7 +13,11 @@
     "reading": { "from": "15:00", "to": "20:00" }
   },
   "sightWords": {
-    "startDate": "2026-11-21",
+    "mode": "refresh",
+    "slotMinutes": 30,
+    "dayStart": "06:07",
+    "dayEnd": "21:37",
+    "startDate": "2026-11-22",
     "reviewCount": 3
   }
 }
