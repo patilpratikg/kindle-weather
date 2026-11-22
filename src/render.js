@@ -21,7 +21,9 @@ mkdirSync(outDir, { recursive: true });
 
 const [w, aq] = await Promise.all([fetchWeather(cfg), fetchAirQuality(cfg)]);
 const now = localNow(cfg.timezone);
-const wordDate = process.env.SW_DATE || now.iso;
+// Between midnight and 6 am it's still "last night": keep yesterday's word as the one learned,
+// and show today's as the next word. (GitHub sometimes runs a scheduled job hours late.)
+const wordDate = process.env.SW_DATE || (now.hour < 6 ? addDays(now.iso, -1) : now.iso);
 const word = (iso) => wordOfTheDay(iso, cfg.sightWords.startDate, cfg.sightWords.reviewCount);
 const ctx = {
   cfg, w, aq, now,

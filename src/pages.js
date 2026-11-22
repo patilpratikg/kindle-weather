@@ -145,7 +145,8 @@ export function bedtime(ctx) {
   const nextIso = late ? w.date.iso : addDays(w.date.iso, 1);
   const nextDay = late ? w.today : w.tomorrow;
   const school = isSchoolDay(nextIso);
-  const wake = school ? `Wake up at <b>${esc(family.wakeTime)}</b> · school day` : 'No school tomorrow · sleep in!';
+  const when = late ? 'today' : 'tomorrow';
+  const wake = school ? `Wake up at <b>${esc(family.wakeTime)}</b> · school day` : `No school ${when} · sleep in!`;
   return page(cfg, {
     dark: true,
     body: `
