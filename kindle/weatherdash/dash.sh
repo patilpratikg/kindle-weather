@@ -5,16 +5,27 @@
 #   dash.sh loop  -> stop the reader UI, refresh every $INTERVAL seconds, deep-sleep in between
 # To get back to the normal Kindle from loop mode: hold the power button ~40 seconds to restart.
 
-DIR="$(cd "$(dirname "$0")" && pwd)"
+# start.sh runs this from a copy in /tmp and passes the real folder in WEATHERDASH_DIR.
+DIR="${WEATHERDASH_DIR:-$(cd "$(dirname "$0")" && pwd)}"
 . "$DIR/config.sh"
 
-LOG="$DIR/dash.log"
+LOG="$DIR/dash.log"            # on the Kindle drive, readable over USB
+TMPLOG=/tmp/weatherdash.log    # always writable, even while plugged into a computer
 IMG=/tmp/weatherdash.png
 SAMPLE="$DIR/sample.png"
 THEME_FILE=/tmp/weatherdash.theme
 TEST_SECONDS="${TEST_SECONDS:-45}"
 
-log() { echo "$(date '+%Y-%m-%d %H:%M:%S') $*" >> "$LOG"; }
+# Each line is written with a short open/close (never a file held open on /mnt/us). While the
+# drive is shared over USB, /mnt/us is unavailable: lines go to /tmp and are copied back later.
+log() {
+  line="$(date '+%Y-%m-%d %H:%M:%S') $*"
+  echo "$line" >> "$TMPLOG"
+  if [ -s "$TMPLOG.pending" ] && { cat "$TMPLOG.pending" >> "$LOG"; } 2>/dev/null; then
+    : > "$TMPLOG.pending"
+  fi
+  { echo "$line" >> "$LOG"; } 2>/dev/null || echo "$line" >> "$TMPLOG.pending"
+}
 
 # Run a command, logging its exit code and any error output.
 run() {
@@ -59,8 +70,8 @@ wifi_down() {
 
 download() {
   # Try with certificate checks first; old firmware may have outdated CA certificates.
-  curl -fsS -m 40 -o "$IMG.new" "$IMAGE_URL" 2>>"$LOG" \
-    || curl -fsSk -m 40 -o "$IMG.new" "$IMAGE_URL" 2>>"$LOG" \
+  curl -fsS -m 40 -o "$IMG.new" "$IMAGE_URL" 2>>"$TMPLOG" \
+    || curl -fsSk -m 40 -o "$IMG.new" "$IMAGE_URL" 2>>"$TMPLOG" \
     || { log "download failed"; return 1; }
   mv "$IMG.new" "$IMG"
   # theme.txt sits next to the image: "dark" on the black bedtime page, otherwise "light".
